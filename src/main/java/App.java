@@ -10,8 +10,8 @@ public class App {
 
   private ItemRepository itemRepository;
   private SalesPromotionRepository salesPromotionRepository;
-  private final Map<String, Item> itemMap;
-  private Map<String, SalesPromotion> promotionMap;
+  private Map<String, Item> itemMap;
+  private SalesPromotion salesPromotion;
 
   public App(ItemRepository itemRepository, SalesPromotionRepository salesPromotionRepository) {
     this.itemRepository = itemRepository;
@@ -21,6 +21,14 @@ public class App {
     for (Item item : itemList) {
       itemMap.put(item.getId(), item);
     }
+
+    List<SalesPromotion> salesPromotionList = salesPromotionRepository.findAll();
+    for (SalesPromotion promotion : salesPromotionList) {
+      if ("50%_DISCOUNT_ON_SPECIFIED_ITEMS".equals(promotion.getType())) {
+        salesPromotion = promotion;
+        break;
+      }
+    }
   }
 
   public String bestCharge(List<String> inputs) {
@@ -28,15 +36,6 @@ public class App {
     Map<String, Item> orderItem = new HashMap<>();
     Map<String, String> orderItemDetails = new HashMap<>();
     List<String> orderDiscountItemName = new ArrayList<>();
-
-    List<SalesPromotion> salesPromotionList = this.salesPromotionRepository.findAll();
-    SalesPromotion salesPromotion = null;
-    for (SalesPromotion promotion : salesPromotionList) {
-      if ("50%_DISCOUNT_ON_SPECIFIED_ITEMS".equals(promotion.getType())) {
-        salesPromotion = promotion;
-        break;
-      }
-    }
 
     output.append("============= Order details =============\n");
     for (String itemInput : inputs) {
@@ -60,8 +59,8 @@ public class App {
       }
     }
     output.append("-----------------------------------\n");
-    int result = 0;
-    double chargeForDeduce6 = 0;
+    String result;
+    double chargeForDeduce6 = 0.0;
     for (Map.Entry<String, Item> entry : orderItem.entrySet()) {
       chargeForDeduce6 +=
           entry.getValue().getPrice() * Double.parseDouble(orderItemDetails.get(entry.getKey()));
@@ -98,7 +97,7 @@ public class App {
             .append("满30减6 yuan，saving 6 yuan\n")
             .append("-----------------------------------\n");
       }
-      result = (int)chargeForDeduce6;
+      result = doubleToString(chargeForDeduce6);
     } else {
       output
           .append("Promotion used:\n")
@@ -108,7 +107,7 @@ public class App {
           .append((int)(originalPrice - deducePriceAfterDiscount))
           .append(" yuan\n")
           .append("-----------------------------------\n");
-      result = (int)deducePriceAfterDiscount;
+      result = doubleToString(deducePriceAfterDiscount);
     }
     output.append("Total：").append(result).append(" yuan\n");
     output.append("===================================");
@@ -119,5 +118,14 @@ public class App {
   public static int calculateSingleItemTotalPrice(String amountStr, Item item) {
     int amount = Integer.parseInt(amountStr);
     return (int) item.getPrice() * amount;
+  }
+
+  public String doubleToString(double value) {
+    String sumMoneyString = String.valueOf(value);
+    if( sumMoneyString.indexOf(".") > 0){
+      sumMoneyString = sumMoneyString.replaceAll("0+?$", "");
+      sumMoneyString = sumMoneyString.replaceAll("[.]$", "");
+    }
+    return sumMoneyString;
   }
 }
